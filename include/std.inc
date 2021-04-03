@@ -195,6 +195,7 @@ NLTR7       := 437Ah    ;
 
 
 .macro init_snes
+.p816
 .smart
 
     sei                 ; disable interrupts
@@ -343,29 +344,80 @@ NLTR7       := 437Ah    ;
     nop
     sta 420Bh           ; transfer again (higher 64k)
 
-    lda #^__HDATA_RUN__&1   ; copy to __HDATA_RUN__
-    sta WMADDH
-    ldx #.LOWORD(__HDATA_RUN__)
-    stx WMADDL
-
-    ldx #8000h          ; dma increment source, copy to 2180
-    stx DMAP0
-    ldx #.LOWORD(__HDATA_LOAD__); copy from __HDATA_LOAD__
-    stx A1T0L
-    lda #^__HDATA_LOAD__
-    sta A1B0
-    ldx #__HDATA_SIZE__ ; skip if data segment is empty
-    beq _empty_data_segment
-    stx DAS0L
-    lda #01
-    sta MDMAEN
-_empty_data_segment:
-        rep #$38                        ;
-        sep #$20                        ; 8bit accu / 16bit index
+    rep #$38                        ;
+    sep #$20                        ; 8bit accu / 16bit index
     jmp :+
 
 wram_fill_byte:
 .byte   $00
 
-        :
+:
 .endmacro
+
+
+; build_dma_tag: create a tag for a DMA transfer
+;
+; - control: control register (byte)
+; - dest: destination register (byte)
+; - src_ofs: source address (word)
+; - src_bank: source bank (byte)
+; - len: length (word)
+.macro build_dma_tag control,dest,src_ofs,src_bank,len
+        .byte control
+        .byte dest
+        .word src_ofs
+        .byte src_bank
+        .word len
+.endmacro
+
+
+; BG12NBA
+.define BG1_CHR_ADDR(addr) (addr>>12)
+.define BG2_CHR_ADDR(addr) (addr>>8)
+.define BG1_BG2_CHR_ADDR(bg1_addr,bg2_addr) (#bg1_addr>>12|#bg2_addr>>8)
+.define BG1_CHR_SHIFT 12
+.define BG2_CHR_SHIFT 8
+
+; BG34NBA
+.define BG3_CHR_ADDR(addr) (addr>>12)
+.define BG4_CHR_ADDR(addr) (addr>>8)
+
+; BG1SC,BG2SC,BG3SC,BG4SC
+.define BG_MAP_ADDR(addr) #(addr>>8)
+.define BG_MAP_SHIFT 8
+.define BG_SIZE_32X32 0
+.define BG_SIZE_64X32 1
+.define BG_SIZE_32X64 2
+.define BG_SIZE_64X64 3
+
+.define SET_VRAM_ADDR(__addr) set_vram_addr __addr
+.define SET_OAM_ADDR(__addr) set_oam_addr __addr
+
+
+;
+; PROC_PROLOGUE: save reg state on proc entry
+;
+.macro PROC_PROLOGUE
+        pha
+        phx
+        phy
+        php
+        phd
+        tsc
+        tcd
+.endmacro
+
+;
+; PROC_EPILOGUE: restore reg state on proc exit
+;
+.macro PROC_EPILOGUE
+        tdc
+        tcs
+        pld
+        plp
+        ply
+        plx
+        pla
+        rts
+.endmacro
+

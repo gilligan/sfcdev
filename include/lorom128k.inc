@@ -19,10 +19,3 @@
     .word 0, 0, 0, 0, 0, 0, reset, 0
 
 .code
-
-.macro init_cpu
-    clc
-    xce
-    rep #$10        ; X/Y 16-bit
-    sep #$20        ; A 8-bit
-.endmacro
