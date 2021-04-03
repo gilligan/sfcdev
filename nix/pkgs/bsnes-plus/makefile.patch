@@ -1,0 +1,55 @@
+diff --git a/bsnes/Makefile b/bsnes/Makefile
+index 497f591..56eaeb8 100644
+--- a/bsnes/Makefile
++++ b/bsnes/Makefile
+@@ -8,11 +8,11 @@ endif
+ 
+ ifeq ($(profile),)
+   profile := compatibility
+-  ifeq ($(out),)
+-    out   := bsnes
++  ifeq ($(_out),)
++    _out   := bsnes
+   endif
+ else ifeq ($(out),)
+-  out     := bsnes-$(profile)
++  _out     := bsnes-$(profile)
+ endif
+ 
+ objdir := obj/$(profile)
+@@ -92,22 +92,22 @@ objects := $(patsubst %,$(objdir)/%.o,$(objects))
+ build: ui_build $(objects)
+ ifeq ($(platform),osx)
+ 	test -d $(osxbundle) || mkdir -p $(osxbundle)/Contents/MacOS
+-	$(strip $(cpp) -o $(osxbundle)/Contents/MacOS/$(out) $(objects) $(link))
++	$(strip $(cpp) -o $(osxbundle)/Contents/MacOS/$(_out) $(objects) $(link))
+ 	mkdir -p $(osxbundle)/Contents/Resources
+ 	cp -f data/bsnes.icns $(osxbundle)/Contents/Resources/AppIcon.icns
+ 	sed 's/@VERSION/v$(version)/g' data/Info.plist > $(osxbundle)/Contents/Info.plist
+ else
+ #	$(foreach qtdll,$(qtdlls),xcopy $(winqtpath)\bin\$(qtdll) .\out\ /D /Y &)
+ #	$(foreach qtplatformdll,$(qtplatformdlls),xcopy $(winqtpath)\$(qtplatformdll) .\out\platforms\ /D /Y &)
+-	$(strip $(cpp) -o out/$(out) $(objects) $(link))
++	$(strip $(cpp) -o out/$(_out) $(objects) $(link))
+ endif
+ 
+ install: build plugins
+ ifeq ($(platform),x)
+-	install -D -m 755 out/$(out) $(DESTDIR)$(prefix)/bin/$(out)
++	install -D -m 755 out/$(_out) $(DESTDIR)$(prefix)/bin/$(_out)
+ 	install -D -m 644 data/bsnes.png $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
+ 	install -D -m 644 data/bsnes.desktop $(DESTDIR)$(prefix)/share/applications/bsnes.desktop
+-	test -d ~/.bsnes || mkdir ~/.bsnes
++	#test -d ~/.bsnes || mkdir ~/.bsnes
+ else ifeq ($(platform),osx)
+ 	mv -f $(osxbundle) /Applications/bsnes+.app
+ 	test -d ~/.bsnes || mkdir ~/.bsnes
+@@ -117,7 +117,7 @@ endif
+ 
+ uninstall:
+ ifeq ($(platform),x)
+-	rm $(DESTDIR)$(prefix)/bin/$(out)
++	rm $(DESTDIR)$(prefix)/bin/$(_out)
+ 	rm $(DESTDIR)$(prefix)/share/pixmaps/bsnes.png
+ 	rm $(DESTDIR)$(prefix)/share/applications/bsnes.desktop
+ else ifeq ($(platform),osx)
