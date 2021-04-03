@@ -1,9 +1,7 @@
-; Displays green screen
 ;
-; ca65 green.s
-; ld65 -C lorom128.cfg -o green.smc green.o
-
-.define ROM_NAME "GREEN"
+; display "HELLO WORLD"
+;
+.define ROM_NAME "HELLO"
 .include "../../include/lorom128k.inc"
 .include "../../include/std.inc"
 
@@ -28,15 +26,14 @@ reset:
     ;
     ; transfer data
     ;
+
     ldx #$0000
     stx VMADDL
-    ldx #.LOWORD(font1_dma)
-    jsr g_dma_transfer
+    call g_dma_tag_2, font1_dma
 
     lda #$00
     sta CGADD
-    ldx #.LOWORD(cgram_dma)
-    jsr g_dma_transfer
+    call g_dma_tag_2, cgram_dma
 
     ldy #$0000
     ldx #$1100
@@ -68,36 +65,7 @@ forever:
 ; SUBROUTINES  -----------------------------------------------------------------
 ;
 
-.proc g_dma_transfer
-    stx $00
-    tyx
-    ldy #$00
-    lda ($00),y  ; dma mode
-    iny
-    sta $4300
-    lda ($00),y ; dest register
-    iny
-    sta $4301
-    lda ($00),y ; set src (low)
-    iny
-    sta $4302
-    lda ($00),y ; set src (high)
-    iny
-    sta $4303
-    lda ($00),y ; set src (bank)
-    iny
-    sta $4304
-    lda ($00),y ; set transfer length (low)
-    iny
-    sta $4305
-    lda ($00),y ; set transfer length (high)
-    iny
-    sta $4306
-    lda #$1
-    sta $420b
-    rts
-.endproc
-
+.include "../lib/dma.s"
 
 ;
 ; DATA ------------------------------------------------------------------------
@@ -105,10 +73,7 @@ forever:
 
 font1_dma: build_dma_tag 1, $18, font, ^font, font_end-font
 cgram_dma: build_dma_tag 0, $22, colors, ^colors, colors_end-colors
-
-greeting:
-    .asciiz "HELLO WORLD"
-greeting_end:
+greeting: .asciiz "HELLO WORLD"
 
 font:
     .incbin "font4bpp.bin"

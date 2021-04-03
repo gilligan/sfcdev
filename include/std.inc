@@ -370,7 +370,6 @@ wram_fill_byte:
         .word len
 .endmacro
 
-
 ; BG12NBA
 .define BG1_CHR_ADDR(addr) (addr>>12)
 .define BG2_CHR_ADDR(addr) (addr>>8)
@@ -421,3 +420,74 @@ wram_fill_byte:
         rts
 .endmacro
 
+
+;
+; indices to arguments on stack
+;
+.define ARG_1 12-1
+.define ARG_2 14-1
+.define ARG_3 16-1
+.define ARG_4 18-1
+.define ARG_5 20-1
+.define ARG_6 22-1
+.define ARG_7 23-1
+.define ARG_8 25-1
+
+.macro push_argument arg
+        .if (.match (.left (1,{arg}),x))
+                phx
+        .elseif (.match (.left (1,{arg}),y))
+                phy
+        .elseif (.match (.left (1,{arg}),'('))
+                pei arg
+        .else
+                pea arg
+        .endif
+.endmacro
+
+.macro process_arguments arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8
+        .ifnblank arg8
+                push_argument arg8
+        .endif
+        .ifnblank arg7
+                push_argument arg7
+        .endif
+        .ifnblank arg6
+                push_argument arg6
+        .endif
+        .ifnblank arg5
+                push_argument arg5
+        .endif
+        .ifnblank arg4
+                push_argument arg4
+        .endif
+        .ifnblank arg3
+                push_argument arg3
+        .endif
+        .ifnblank arg2
+                push_argument arg2
+        .endif
+        .ifnblank arg1
+                push_argument arg1
+        .endif
+.endmacro
+
+.macro call fptr, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8
+        process_arguments arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8
+        jsr fptr
+        rep #$38
+        .a16
+        tsc                               ;
+        clc                               ; 
+        adc # ( ( .paramcount -1 ) * 2 )  ;
+        tcs                               ; remove args from stack
+        sep #$20
+        .a8
+.endmacro
+
+
+.macro IMPORT file, id
+.ident (id):
+.incbin file
+.ident (.concat (id, "_end")):
+.endmacro
